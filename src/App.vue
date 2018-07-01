@@ -44,10 +44,6 @@ export default {
     const socket = new WebSocket("ws://rocket.pelidev.com/ws/game")
 
     this.getCurrentGame()
-      .then(res => {
-        this.colors = res.Colors
-        this.timeLeft = res.TimeLeft
-      })
 
     socket.onmessage = e => {
 
@@ -57,9 +53,9 @@ export default {
         clearInterval(this.tickInterval)
 
         if (eventName === 'winNumberHash') {
-          this.getCurrentGame(false)
+          this.getCurrentGame()
         } else if (eventName === 'winNumber') {
-          this.getCurrentGame(true)
+          this.getCurrentGame()
         }
       }
     }
@@ -71,12 +67,12 @@ export default {
 
   methods: {
 
-    getCurrentGame(isGameFinished) {
+    getCurrentGame() {
       return fetch('http://rocket.pelidev.com/api/game/current')
         .then(res => res.json())
         .then(res => {
-          this.colors = res.Colors
-          this.timeLeft = isGameFinished ? res.TimeLeftNext : res.TimeLeft
+          this.colors = res.Colors.split('').reverse()
+          this.timeLeft = res.WinNum ? res.TimeLeftNext : res.TimeLeft
           this.winNum = res.WinNum
           this.startTick()
         })
