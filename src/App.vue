@@ -2,98 +2,50 @@
   <main class="game">
     <h1 class="game__headline">Game</h1>
     <section class="game__body">
-      <div class="game__time-left">
-        {{winNumParsed ? 'Next game in' : 'The game will start in'}} {{timeLeft}} seconds
-      </div>
-      <div class="game__desk">
-        <ul v-if="colors" class="game__cells">
-          <li
-            v-for="(index, key) in colors"
-            :key="key"
-            class="game__cell"
-            :class="[
-              'game__cell_color-' + index,
-              (winNumParsed && winNumParsed === key + 1) ? 'game__cell_winner' : ''
-            ]"
-          >{{key + 1}}</li>
-        </ul>
-      </div>
-      <div v-if="winNumParsed" class="game__win-num">
-        Winner:
-        <span class="game__win-num-cell">{{winNumParsed}}</span>
-      </div>
+      <counter></counter>
+      <wheel></wheel>
     </section>
   </main>
 </template>
 
 <script>
+import Wheel from "./components/Wheel";
+import Counter from "./components/Counter";
+
+import { mapActions } from "vuex";
 
 export default {
-  name: 'app',
-  data() {
-    return {
-      colors: null,
-      timeLeft: null,
-      winNumHash: null,
-      winNum: null,
-      tickInterval: null
-    }
-  },
+  name: "app",
+  components: { Wheel, Counter },
 
   created() {
-    const socket = new WebSocket("ws://rocket.pelidev.com/ws/game")
+    const socket = new WebSocket("ws://rocket.pelidev.com/ws/game");
 
-    this.getCurrentGame()
+    this.getGame();
 
     socket.onmessage = e => {
-
       if (e.data) {
-        const eventName = JSON.parse(e.data).Event
+        const eventName = JSON.parse(e.data).Event;
 
-        clearInterval(this.tickInterval)
+        this.clearTick();
 
-        if (eventName === 'winNumberHash') {
-          this.getCurrentGame()
-        } else if (eventName === 'winNumber') {
-          this.getCurrentGame()
+        if (eventName === "winNumberHash") {
+          this.getGame();
+        } else if (eventName === "winNumber") {
+          this.getGame();
         }
       }
-    }
+    };
   },
 
   destroyed() {
-    clearInterval(this.tickInterval)
+    this.clearTick();
   },
 
   methods: {
-
-    getCurrentGame() {
-      return fetch('http://rocket.pelidev.com/api/game/current')
-        .then(res => res.json())
-        .then(res => {
-          this.colors = res.Colors.split('').reverse()
-          this.timeLeft = res.WinNum ? res.TimeLeftNext : res.TimeLeft
-          this.winNum = res.WinNum
-          this.startTick()
-        })
-    },
-
-    startTick() {
-      this.tickInterval = setInterval(() => {
-        if (this.timeLeft) {
-          this.timeLeft -= 1
-        }
-      }, 1000)
-    },
-
-  },
-
-  computed: {
-    winNumParsed() {
-      return this.winNum ? Math.floor(this.winNum) : false
-    }
+    ...mapActions(["getGame", "clearTick"])
   }
-}
+};
 </script>
 
 <style lang="scss">
@@ -104,7 +56,7 @@ body {
   min-height: 100vh;
 }
 .game {
-  font-family: 'Avenir', Helvetica, Arial, sans-serif;
+  font-family: "Avenir", Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
@@ -117,10 +69,6 @@ body {
   &__headline {
     margin: 0;
     padding: 20px 0;
-  }
-
-  &__time-left {
-    padding-bottom: 20px;
   }
 
   &__desk {
@@ -144,7 +92,7 @@ body {
     align-items: center;
     font-weight: 600;
     transform: scale(1);
-    transition: transform .3s;
+    transition: transform 0.3s;
     &_color {
       &-1 {
         background: #0ca311;
@@ -164,23 +112,6 @@ body {
       transform: scale(1.6);
       z-index: 10;
     }
-  }
-
-  &__win-num {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  &__win-num-cell {
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    border-radius: 50px;
-    border: 2px solid #ffffff;
-    width: 40px;
-    height: 40px;
-    margin: 0 20px;
   }
 }
 </style>
